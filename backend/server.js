@@ -18,7 +18,7 @@ const db=mysql.createConnection({
 db.connect((err) => {
     if(err){
         console.error('Error connecting to database:', err);
-    }else{
+    }else{ 
         console.log('Connected to database');
     }
 });
@@ -50,7 +50,7 @@ app.post('/login',async(req,res)=>{
         if(!isPasswordValid){
             return res.status(400).send({message:'Invalid password'});
         }
-        const token = jwt.sign(
+const token = jwt.sign(
 
 {
 id:user.id,
@@ -65,6 +65,78 @@ return res.status(200).send({
 message:'Login successful',
 token:token
 }); }); 
+});
+app.post('/profile', (req,res)=>{
+
+const {
+email,
+student_name,
+reg_no,
+department,
+year,
+phone,
+profile_photo
+} = req.body;
+
+const query = `
+INSERT INTO student_profiles
+(email,student_name,reg_no,department,year,phone,profile_photo)
+VALUES (?,?,?,?,?,?,?)
+`;
+
+db.query(
+query,
+[
+email,
+student_name,
+reg_no,
+department,
+year,
+phone,
+profile_photo
+],
+(err,result)=>{
+
+if(err){
+    console.log(err);
+
+
+return res.status(500).json({
+message:"Error saving profile"
+});
+
+}
+
+res.json({
+message:"Profile saved"
+});
+
+});
+
+});
+app.get('/profile/:email',(req,res)=>{
+
+const email = req.params.email;
+
+db.query(
+'SELECT * FROM student_profiles WHERE email=?',
+[email],
+(err,result)=>{
+
+if(err){
+return res.status(500).json({
+message:"Error fetching profile"
+});
+}
+
+if(result.length === 0){
+return res.json({});
+}
+
+res.json(result[0]);
+
+});
+
 });
 const PORT=5000;
 app.listen(PORT,()=>{

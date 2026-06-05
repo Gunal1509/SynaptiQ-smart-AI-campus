@@ -3,8 +3,10 @@ import pro from '../assets/profiles.png';
 import tim from '../assets/timetable.png';
 import rag1 from '../assets/rag1.png';
 import AI from '../assets/AI.png';
+import axios from "axios";
 import {useNavigate} from 'react-router-dom';
 import {useEffect} from 'react';
+import { useState } from 'react';
 function Dashboard() {
     const navigate=useNavigate();
     useEffect(()=>{
@@ -18,9 +20,34 @@ function Dashboard() {
         }
 
     },[])
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [profile,setProfile] = useState(null);
+
+useEffect(()=>{
+
+const email = localStorage.getItem("email");
+
+axios.get(
+`http://localhost:5000/profile/${email}`
+)
+.then((res)=>{
+console.log("PROFILE DATA:", res.data);
+setProfile(res.data);
+})
+.catch((err)=>{
+console.log(err);
+});
+
+},[]);
     return(
-        <div className="bg-success min-vh-100">
-<nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+        <div className="bg-success min-vh-100"
+        style={{ width: "100%", overflowX: "auto" }}>
+<nav className="navbar navbar-expand-lg navbar-dark bg-dark  w-100 px-4"
+style={{
+position: "sticky",
+top: 0,
+width: "100vw"
+}}>
 <div className="d-flex gap-2">
 <button
 className="btn btn-outline-light dropdown-toggle"
@@ -44,6 +71,16 @@ Settings
 CampusCopilot
 </a>
 </div>
+<div className="ms-auto d-flex gap-2">
+
+<button
+className="btn btn-outline-warning"
+onClick={() => setShowNotifications(!showNotifications)}
+>
+🔔
+</button>
+</div>
+
 
 <div className="ms-auto d-flex gap-2">
 <button className="btn btn-outline-light"onClick={()=>{
@@ -51,11 +88,67 @@ localStorage.removeItem("token");
 navigate('/');}}>
 Logout
 </button>
-<a className="btn btn-outline-light " href="#">
-Profile
-</a>
+<div
+className="d-flex align-items-center gap-2"
+onClick={()=>navigate('/Profiles')}
+style={{cursor:"pointer"}}
+>
+
+<img
+src={
+profile?.profile_photo ||
+"https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+}
+alt="profile"
+style={{
+width:"40px",
+height:"40px",
+borderRadius:"50%"
+}}
+/>
+
+<span className="text-white fw-bold">
+{profile?.student_name || "Profile"}
+</span>
+
+</div>
 </div>
 </nav>
+{showNotifications && (
+
+<div
+className="position-fixed end-0 top-0 bg-light shadow p-3"
+style={{
+width:"300px",
+height:"100vh",
+zIndex:"1000"
+}}
+>
+
+<h4>Notifications</h4>
+
+<div className="alert alert-warning">DBMS Assignment due tomorrow
+</div>
+
+<div className="alert alert-info"> New React Material uploaded
+</div>
+
+<div className="alert alert-success"> Learn JWT Authentication
+</div>
+
+<div className="alert alert-primary">AI Class starts in 30 mins
+</div>
+
+<button
+className="btn btn-danger w-100"
+onClick={() => setShowNotifications(false)}
+>
+Close
+</button>
+
+</div>
+
+)}
 
 <div className="card p-4 rounded-4 d-inline-block mt-3 ms-4 fw-bold">
 <h1> SynapticQ</h1>
