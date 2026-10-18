@@ -1,0 +1,36 @@
+# Production Dockerfile for SYNAPTIQ FastAPI AI & RAG Backend
+FROM python:3.11-slim
+
+# Prevent Python from writing .pyc and enable unbuffered logging
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install system dependencies needed for compiling C-extensions if any
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PyTorch CPU first to keep image size small
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend application source
+COPY main.py .
+COPY routes/ ./routes/
+COPY services/ ./services/
+COPY models/ ./models/
+
+# Create uploads directory for syllabus & notes PDF ingestion
+RUN mkdir -p uploads
+
+# Expose FastAPI service port
+EXPOSE 8000
+
+# Start Uvicorn production server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

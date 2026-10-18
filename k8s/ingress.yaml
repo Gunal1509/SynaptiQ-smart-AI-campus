@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: synaptiq-ingress
+  namespace: synaptiq
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+spec:
+  rules:
+    - host: "synaptiq.yourdomain.com"  # Replace with your actual domain or leave empty for IP
+      http:
+        paths:
+          # Frontend SPA Web Pages
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: synaptiq-frontend
+                port:
+                  number: 80
+
+          # Node.js Auth & Admin API
+          - path: /api/node/
+            pathType: Prefix
+            backend:
+              service:
+                name: synaptiq-node
+                port:
+                  number: 5000
+
+          # FastAPI AI, RAG & Recommendations API
+          - path: /api/py/
+            pathType: Prefix
+            backend:
+              service:
+                name: synaptiq-fastapi
+                port:
+                  number: 8000
+  tls:
+    - hosts:
+        - "synaptiq.yourdomain.com"
+      secretName: synaptiq-tls-cert

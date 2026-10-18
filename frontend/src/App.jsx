@@ -1,37 +1,97 @@
-import Login from './components/Login'
-import Signup from './components/Signup'
-import Dashboard from './components/Dashboard'
-import Uploads from './components/Uploads'
-import Profiles from './components/Profiles'
-import TimeTable from './components/TimeTable'
-import Rag from './components/Rag'
-import AIAssisstant from './components/AIAssisstant'
 import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/login';
+import Signup from './components/signup';
+import Dashboard from './components/dashboard';
+import Uploads from './components/Uploads';
+import Profiles from './components/Profiles';
+import TimeTable from './components/TimeTable';
+import Rag from './components/Rag';
+import AIAssisstant from './components/AIAssisstant';
+import ExamSprint from './components/ExamSprint';
+import AdminPortal from './components/AdminPortal';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
-import {Routes,Route} from 'react-router-dom'
+function App() {
+  const [user, setUser] = useState(null);
 
-function App(){
-    const[user,setuser]=useState(null);
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Login setuser={setUser} />} />
+      <Route path="/signup" element={<Signup />} />
 
-return(
+      {/* Protected Routes (Requires JWT Authentication) */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/uploads"
+        element={
+          <ProtectedRoute>
+            <Uploads />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profiles"
+        element={
+          <ProtectedRoute>
+            <Profiles user={user} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/timetable"
+        element={
+          <ProtectedRoute>
+            <TimeTable />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rag"
+        element={
+          <ProtectedRoute>
+            <Rag />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/aiassisstant"
+        element={
+          <ProtectedRoute>
+            <AIAssisstant />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/examsprint"
+        element={
+          <ProtectedRoute>
+            <ExamSprint />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminPortal />
+          </AdminRoute>
+        }
+      />
 
-<Routes>
-
-<Route path="/" element={<Login setuser={setuser}/>}/>
-
-<Route path="/signup" element={<Signup/>}/>
-
-<Route path="/dashboard" element={<Dashboard/>}/>
-<Route path="/Uploads" element={<Uploads/>}/>
-<Route path="/Profiles" element={<Profiles user={user}/>}/>
-<Route path="/TimeTable" element={<TimeTable/>}/>
-<Route path="/Rag" element={<Rag/>}/>
-<Route path="/AIAssisstant" element={<AIAssisstant/>}/>
-
-</Routes>
-
-)
-
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;

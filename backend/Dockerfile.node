@@ -1,0 +1,18 @@
+# Production Dockerfile for SYNAPTIQ Node.js Auth & Admin Backend
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies (only production packages)
+COPY package*.json ./
+RUN npm install --omit=dev
+
+# Copy application code
+COPY server.js .
+COPY setup_admin_tables.js .
+
+# Expose port 5000
+EXPOSE 5000
+
+# Start production server
+CMD ["node", "server.js"]

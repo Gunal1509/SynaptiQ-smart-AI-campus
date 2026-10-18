@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synaptiq-node
+  namespace: synaptiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: synaptiq-node
+  template:
+    metadata:
+      labels:
+        app: synaptiq-node
+    spec:
+      containers:
+        - name: node-backend
+          image: synaptiq-node:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              value: "5000"
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: synaptiq-config
+                  key: MYSQL_HOST
+            - name: MYSQL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: synaptiq-config
+                  key: MYSQL_PORT
+            - name: MYSQL_USER
+              value: "root"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: synaptiq-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: synaptiq-config
+                  key: MYSQL_DATABASE
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: synaptiq-config
+                  key: MONGODB_URI
+            - name: MONGODB_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: synaptiq-config
+                  key: MONGODB_DB
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: synaptiq-secrets
+                  key: JWT_SECRET
+          ports:
+            - containerPort: 5000
+              name: http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: synaptiq-node
+  namespace: synaptiq
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+      name: http
+  selector:
+    app: synaptiq-node

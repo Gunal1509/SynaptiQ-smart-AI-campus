@@ -1,0 +1,12 @@
+node_modules
+__pycache__
+*.pyc
+*.pyo
+.git
+.github
+.env.local
+*.log
+.venv
+venv
+uploads/*.pdf
+!uploads/

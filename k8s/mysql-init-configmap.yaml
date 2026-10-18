@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+  namespace: synaptiq
+data:
+  init_db.sql: |
+    CREATE DATABASE IF NOT EXISTS campus;
+    USE campus;
+
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(20) DEFAULT 'student',
+        status VARCHAR(20) DEFAULT 'approved',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS student_profiles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        student_name VARCHAR(255),
+        reg_no VARCHAR(100),
+        department VARCHAR(100),
+        year VARCHAR(50),
+        phone VARCHAR(50),
+        profile_photo LONGTEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (email) REFERENCES users(email) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS login_activity (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        email VARCHAR(255) NOT NULL,
+        ip_address VARCHAR(100) NULL,
+        user_agent TEXT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'success',
+        login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        sender_email VARCHAR(255) DEFAULT 'admin@synaptiq.edu',
+        recipient_email VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(50) DEFAULT 'info',
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS announcements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        category VARCHAR(100) DEFAULT 'General',
+        priority VARCHAR(20) DEFAULT 'medium',
+        is_pinned BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE,
+        author VARCHAR(255) DEFAULT 'Campus Admin',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS system_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value VARCHAR(255) NOT NULL,
+        description VARCHAR(255) NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    INSERT IGNORE INTO system_settings (setting_key, setting_value, description) VALUES
+    ('require_admin_approval', 'false', 'Require admin approval for new student registrations'),
+    ('allow_signups', 'true', 'Allow public registration on signup page'),
+    ('maintenance_mode', 'false', 'Put portal in maintenance mode (only admins can access)'),
+    ('announcement_banner_enabled', 'true', 'Show announcements banner on student dashboard');
+
+    INSERT IGNORE INTO users (id, name, email, password, role, status) VALUES
+    (1, 'Gunalsiva', 'sivagunal15@gmail.com', '$2b$10$1PjVv316fGq0BskmXJqSVOu42t3w1763aP96PZtO0t0g4vE5W.Geq', 'admin', 'approved');
+
+    INSERT INTO announcements (title, content, category, priority, is_pinned, is_active, author)
+    SELECT 'Welcome to SYNAPTIQ Containerized Cloud Portal', 'Welcome to SYNAPTIQ! The AI Campus Copilot, RAG syllabus assistant, YouTube learning recommendations, and ExamSprint modules are now running fully containerized on Docker & Kubernetes.', 'General', 'high', TRUE, TRUE, 'Chief Administrator'
+    WHERE NOT EXISTS (SELECT 1 FROM announcements LIMIT 1);

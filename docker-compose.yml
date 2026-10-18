@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # 1. MySQL Database (Users, Profiles, Governance, Logins, Announcements)
+  synaptiq-mysql:
+    image: mysql:8.0
+    container_name: synaptiq-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-Gunal@15}
+      MYSQL_DATABASE: campus
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    ports:
+      - "3307:3306"
+    networks:
+      - synaptiq-network
+
+  # 2. MongoDB (Uploaded syllabus notes, assessment records, interactions)
+  synaptiq-mongodb:
+    image: mongo:6.0
+    container_name: synaptiq-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - synaptiq-network
+
+  # 3. Node.js Backend Service (Auth, Admin, Profiles, MySQL/Mongo queries)
+  synaptiq-node:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.node
+    container_name: synaptiq-node
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      MYSQL_HOST: synaptiq-mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Gunal@15}
+      MYSQL_DATABASE: campus
+      MONGODB_URI: mongodb://synaptiq-mongodb:27017/
+      MONGODB_DB: ai_campus
+      JWT_SECRET: ${JWT_SECRET:-synaptiqsecret2026}
+    depends_on:
+      - synaptiq-mysql
+      - synaptiq-mongodb
+    ports:
+      - "5000:5000"
+    networks:
+      - synaptiq-network
+
+  # 4. FastAPI AI & RAG Backend Service (Groq Llama 3.3, all-MiniLM-L6-v2, FAISS)
+  synaptiq-fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.fastapi
+    container_name: synaptiq-fastapi
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://synaptiq-mongodb:27017/
+      MONGODB_DB: ai_campus
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      CUSTOM_EMBEDDING_MODEL: ${CUSTOM_EMBEDDING_MODEL:-}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - synaptiq-mongodb
+    ports:
+      - "8000:8000"
+    networks:
+      - synaptiq-network
+
+  # 5. React Frontend + Nginx Single-Entry Reverse Proxy (Public Facing)
+  synaptiq-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_NODE_API_URL: ""
+        VITE_PYTHON_API_URL: ""
+    container_name: synaptiq-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - synaptiq-node
+      - synaptiq-fastapi
+    networks:
+      - synaptiq-network
+
+networks:
+  synaptiq-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  mongo_data:
+  uploads_data:
